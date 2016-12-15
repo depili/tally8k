@@ -1,0 +1,98 @@
+Ledi-etherconit: testattu OK
+Rele-ethercon:
+
+APA102 ketjun pinnit:
+1 - GND
+2 - DATA
+3 - CLK
+4 - +5V
+
+Rele-ethercon:
+1 - Rele 1 (Vihreä raid A)
+2 - Rele 2 (Vihreä A)
+3 - Rele 3 (Oranssi raid A)
+4 - Rele 4 (Sininen)
+5 - Rele 5 (Sininen raid)
+6 - Rele 6 (Oranssi A)
+7 - Rele 7 (Ruskea raid)
+8 - Common (Ruskea)
+
+"0" Ethercon (remote status):
+1 - (Vihreä raidallinen A) DATA
+2 - (Vihreä A) CLK
+3 - Rele 8 NO
+4 - (Sininen) GND
+5 - (Sininen raid) GND
+6 - Rele 8 NO
+7 - (Ruskea, raid) +12V
+8 - (Ruskea) +12V
+
+Muut etherconit:
+1 - (Vihreä raidallinen A) DATA
+2 - (Vihreä A) CLK
+3 - NC
+4 - (Sininen) GND
+5 - (Sininen raid) GND
+6 - NC
+7 - (Ruskea, raid) +12V
+8 - (Ruskea) +12V
+
+
+RPI GPIO:
+Pin Name	Dest
+01  3,3V	Level shifter Va
+02  5V		Linear regulator 5V out
+03  GPIO02	Mega pin 02 tally green led via level shifter
+04  5V
+05  GPIO03	Mega pin 03 tally red led via level shifter
+06  GND		GND buss screw terminal
+07  GPIO04
+08  TX		Mega pin 0 via level shifter
+09  GND
+10  RX		Mega pin 1 via level shifter
+
+
+
+Mega:
+
+A0  - Front status DATA
+A1  - Front status CLK
+A2  - 
+A3  - 
+A4  - Rele 1
+A5  - Rele 2
+A6  - Rele 3
+A7  - Rele 4
+
+A8  - Rele 5
+A9  - Rele 6
+A10 - Rele 7
+A11 - Rele 8
+A12 -
+A13 -
+A14 -
+A15 -
+
+0 - RPI serial RX
+1 - RPI serial TX
+2 - Tally green led in
+3 - Tally red led in
+4-7 RPI gpio
+
+38 - Remote status data
+39 - Remote status clk
+40 - Tally 5 data
+41 - Tally 5 clk
+42 - Tally 6 data
+43 - Tally 6 clk
+44 - Tally 7 data
+45 - Tally 7 clk
+46 - Tally 8 data
+47 - Tally 8 clk
+48 - Tally 9 data
+49 - Tally 9 clk
+50 - Tally 10 data
+51 - Tally 10 clk
+52 - Tally 11+12 data
+53 - Tally 11+12 clk
+
