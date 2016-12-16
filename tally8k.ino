@@ -211,14 +211,12 @@ void loop() {
 
 // Read serial data between loops
 void serialEvent() {
-  Serial.print("X");
   // Read new data until we get a complete message or data is exhausted
   while (!process_serial && Serial.available()) {
     char in = (char)Serial.read();
     if (in == 'Q') {
       // Start of message
       msg.start_magic = 0xff;
-      Serial.print("M");
       msg_field = 1;
     } else if (msg_field == 1) {
       uint8_t num;
@@ -229,36 +227,29 @@ void serialEvent() {
         // Count from A-> (A=10, B=11)
         num = (uint8_t)in - 'A' + 10;
       }
-      Serial.print(num);
-      Serial.print(" ");
       if (num > 0 && num <= Tallies) {
         msg.tally_number = num;
         msg_field++;
       } else {
         // Tally number out of range
         msg_field = 0;
-        Serial.println("E:N");
       }
     } else if (msg_field == 2) {
       msg.tally_state = (uint8_t)in - '0';
       if (msg.tally_state < 5) {
         msg_field++;
-        Serial.print(msg.tally_state);
       } else {
         // Tally state out of range
         msg_field = 0;
-        Serial.println("E:S");
       }
     } else if (msg_field == 3 && in == 'W') {
       // Got a complete message
       process_serial = true;
       msg_field = 0;
-      Serial.println("C");
       return;
     } else {
       // Invalid communication received, too many fields or too little fields
       msg_field = 0;
-      Serial.println("EEE");
     }
   }
 }
