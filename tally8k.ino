@@ -118,11 +118,8 @@ uint8_t tally_states[Tallies];
 // Tally led chains
 CRGB tally_leds[TallyStrips][TallyLedsPerStrip];
 
-// Front status leds
-CRGB front_status[FrontStatusLeds];
-
-// Status leds in "0" connector
-CRGB remote_status[Tallies];
+// Status leds
+CRGB status_leds[Tallies];
 
 /* Serial message struct
  * The message is as follow:
@@ -166,9 +163,9 @@ void setup() {
   
   // Apa led chains
   // Front status
-  FastLED.addLeds<APA102, A0, A1, ColorOrder>(front_status, 12);
+  FastLED.addLeds<APA102, A0, A1, ColorOrder>(status_leds, 12);
   // Rear remote status
-  FastLED.addLeds<APA102, 38, 39, ColorOrder>(remote_status, 16);
+  FastLED.addLeds<APA102, 38, 39, ColorOrder>(status_leds, Tallies);
   // Tally led chains
   FastLED.addLeds<APA102, 40, 41, ColorOrder>(tally_leds[0], TallyLedsPerStrip);
   FastLED.addLeds<APA102, 42, 43, ColorOrder>(tally_leds[1], TallyLedsPerStrip);
@@ -364,20 +361,12 @@ uint32_t statusColor(int tally) {
 // Simple fuction to just move a dot across all the chains to test wiring
 void ledTest() {
   //Front status
-  for (int i = 0; i < 12; i++) {
-     front_status[i] = CRGB::Red;
+  for (int i = 0; i < Tallies; i++) {
+     status_leds[i] = CRGB::Red;
      FastLED.show();
-     front_status[i] = CRGB::Black;
+     status_leds[i] = CRGB::Black;
      delay(50);
   }
-  
-  //Remote status leds
-  for (int i = 0; i < 16; i++) {
-    remote_status[i] = CRGB::Red;
-    FastLED.show();
-    remote_status[i] = CRGB::Black;
-  }
-  
   // Loop over all the various tally strips
   for (int x = 0; x < TallyStrips; x++) {
     // This inner loop will go over each led in the current strip, one at a time
