@@ -81,14 +81,14 @@
 #define ColorSafe     0x0000ff
 #define ColorPVM      0x00ff00
 #define ColorPGM      0xff0000
-#define ColorPGMPVM   0xffff00
+#define ColorPGMPVM   0xff5000
 
 // Status led colors
 #define StatusUnknown 0x020202
 #define StatusSafe    0x00000a
 #define StatusPVM     0x000a00
 #define StatusPGM     0x0a0000
-#define StatusPGMPVM  0x0a0a00
+#define StatusPGMPVM  0x0a0400
 #define StatusError   0xffff00
 
 // Number of total tallies
@@ -163,7 +163,7 @@ void setup() {
   
   // Apa led chains
   // Front status
-  FastLED.addLeds<APA102, A0, A1, ColorOrder>(status_leds, 12);
+  FastLED.addLeds<APA102, A0, A1, ColorOrder>(status_leds, Tallies);
   // Rear remote status
   FastLED.addLeds<APA102, 38, 39, ColorOrder>(status_leds, Tallies);
   // Tally led chains
@@ -338,9 +338,10 @@ uint32_t tallyColor(uint8_t state) {
   switch (state ) {
     case TallyUnknown:  color = ColorUnknown; break;
     case TallySafe:     color = ColorSafe; break;
+    case TallyPVM:      color = ColorPVM; break;
     case TallyPGM:      color = ColorPGM; break;
     case TallyPGMPVM:   color = ColorPGMPVM; break;
-    default:            color = TallyPGM;
+    default:            color = ColorPGM;
   }
   return color;
 }
