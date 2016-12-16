@@ -56,7 +56,8 @@
  * Tally mapping
  *
  * 1-4    Relays 1-4
- * 5-10   Apa102 chains of 8 leds each
+ * 5      Relay 5 + Apa102 chain
+ * 6-10   Apa102 chains of 8 leds each
  * 11+12  Combined apa chain of 16 leds
  * 13-16  Relays 5-8
  *
@@ -279,25 +280,28 @@ void setTally(int tally, uint8_t state) {
     } else {
       digitalWrite(relays[tally-1], HIGH);
     }
-  } else if (tally < 13) {
-    int chain = tally - 5;
-    CRGB color;
-    // apa102 chains
-    switch (state ) {
-      case TallyUnknown:  color = ColorUnknown; break;
-      case TallySafe:     color = ColorSafe; break;
-      case TallyPGM:      color = ColorPGM; break;
-      case TallyPGMPVM:   color = ColorPGMPVM; break;
-      default:       color = TallyPGM;
+  } else if (tally == 5) {
+    // Special case, relay and apa102 chain
+    if (state > TallyPVM) {
+      // Tally is in PGM
+      digitalWrite(relays[4], LOW);
+    } else {
+      digitalWrite(relays[4], HIGH);
     }
+    // Leds
     for (int i = 0; i < TallyLedsPerStrip; i++) {
-      tally_leds[chain][i] = color;
+      tally_leds[0][i] = tallyColor(state);
     }
-    
-  } else if (tally < 17) {
-    // Relays 5-8
+  } else if (tally < 13) {
+    // Apa102 chains
+    int chain = tally - 5;
+    for (int i = 0; i < TallyLedsPerStrip; i++) {
+      tally_leds[chain][i] = tallyColor(state);
+    }
+  } else if (tally < 16) {
+    // Relays 6-8
     // Get the relay pin designator
-    int pin = relays[tally-13+4];
+    int pin = relays[tally-13+5];
     if (state) {
       digitalWrite(pin, LOW);
     } else {
@@ -315,33 +319,33 @@ void updateStatus() {
   if (status_red) {
     // The 'red status led' is on, just display all red
     // This signal will blink so real status will alternate with the error signal
-    for (int i = 0; i < FrontStatusLeds; i++) {
-      front_status[i] = StatusError;
-    }
-    
     for (int i = 0; i < Tallies; i++) {
-      remote_status[i] = StatusError;
+      status_leds[i] = StatusError;
     }
-    
   } else if (status_green) {
     // Green line means everything is fine, display the state that we have
-    // Front status leds
-    for (int i = 0; i < FrontStatusLeds; i++) {
-      front_status[i] = statusColor(i);
-    }
-    // Remote status for all tallies
     for (int i = 0; i < Tallies; i++) {
-      remote_status[i] = statusColor(i);
+      status_leds[i] = statusColor(i);
     }
   } else {
     // No status "leds" are on
-    for (int i = 0; i < FrontStatusLeds; i++) {
-      front_status[i] = StatusError;
-    }
     for (int i = 0; i < Tallies; i++) {
-      remote_status[i] = StatusUnknown;
+      status_leds[i] = StatusUnknown;
     }
   }
+}
+
+uint32_t tallyColor(uint8_t state) {
+  uint32_t color;
+  // apa102 chains
+  switch (state ) {
+    case TallyUnknown:  color = ColorUnknown; break;
+    case TallySafe:     color = ColorSafe; break;
+    case TallyPGM:      color = ColorPGM; break;
+    case TallyPGMPVM:   color = ColorPGMPVM; break;
+    default:            color = TallyPGM;
+  }
+  return color;
 }
 
 uint32_t statusColor(int tally) {
