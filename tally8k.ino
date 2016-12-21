@@ -78,18 +78,18 @@
 
 // Tally led colors
 #define ColorUnknown  0x050505
-#define ColorSafe     0x0000ff
-#define ColorPVM      0x00ff00
-#define ColorPGM      0xff0000
-#define ColorPGMPVM   0xff5000
+#define ColorSafe     0x000006
+#define ColorPVM      0x003f00
+#define ColorPGM      0x3f0000
+#define ColorPGMPVM   0x3f1400
 
 // Status led colors
 #define StatusUnknown 0x020202
-#define StatusSafe    0x00000a
-#define StatusPVM     0x000a00
-#define StatusPGM     0x0a0000
-#define StatusPGMPVM  0x0a0400
-#define StatusError   0xffff00
+#define StatusSafe    0x000004
+#define StatusPVM     0x000400
+#define StatusPGM     0x040000
+#define StatusPGMPVM  0x040200
+#define StatusError   0x0f0f00
 
 // Number of total tallies
 #define Tallies 16
@@ -123,18 +123,18 @@ CRGB status_leds[Tallies];
 
 /* Serial message struct
  * The message is as follow:
- * Start by sending ascii 'Q'
- * then the tally number 1-9, A-G
+ * Start by sending ascii '<'
+ * then the tally number 1-9, A-F
  * and then the state 0-4
- * end the message with 'W'
+ * end the message with '>'
  *
  * Example: QA3W - tally 10 status PGM
  */ 
 struct s_tallymessage {
-  uint8_t start_magic;  // 'Q'
+  uint8_t start_magic;  // '<'
   uint8_t tally_number;
   uint8_t tally_state;
-  uint8_t end_magic;    // 'W 
+  uint8_t end_magic;    // '> 
 };
 
 volatile s_tallymessage msg;
@@ -184,7 +184,7 @@ void setup() {
     setTally(i, TallyUnknown);
   }
   // Send the state to the leds.
-  FastLED.show();
+  updateTallies();
 }
 
 void loop() {
@@ -192,31 +192,30 @@ void loop() {
   // Simple test routine for now, toggle all tallies on and then off one by one
   for (int i=1; i<=Tallies; i++) {
     setTally(i,TallyPGM);
-    FastLED.show();
+    updateTallies();
     delay(2000);
   }
     
   for (int i=1; i<=Tallies; i++) {
     setTally(i, TallySafe);
-    FastLED.show();
+    updateTallies();
     delay(2000);
   }
   */
   if (process_serial) {
-    setTally(msg.tally_number, msg.tally_state);
+    updateTallies();
     process_serial=false;
-    FastLED.show();
   }
 }
 
 // Read serial data between loops
 void serialEvent() {
   // Read new data until we get a complete message or data is exhausted
-  while (!process_serial && Serial.available()) {
+  while (Serial.available()) {
     char in = (char)Serial.read();
-    if (in == 'Q') {
+    if (in == '<') {
       // Start of message
-      msg.start_magic = 0xff;
+      msg.start_magic = '<';
       msg_field = 1;
     } else if (msg_field == 1) {
       uint8_t num;
@@ -242,11 +241,11 @@ void serialEvent() {
         // Tally state out of range
         msg_field = 0;
       }
-    } else if (msg_field == 3 && in == 'W') {
+    } else if (msg_field == 3 && in == '>') {
       // Got a complete message
       process_serial = true;
       msg_field = 0;
-      return;
+      setTally(msg.tally_number, msg.tally_state);
     } else {
       // Invalid communication received, too many fields or too little fields
       msg_field = 0;
@@ -255,55 +254,60 @@ void serialEvent() {
 }
 
 // Set a given tally to a given state
-// We use "natural" indexing starting from 1
-// Tally mapping: 1-4: Relays 1-4
-// 5-13: apa102 chains
-// 14-17: Relays 5-8
-void setTally(int tally, uint8_t state) {
-  if (tally > 0 && tally < 5) {
-    // Relays 1-4
-    if (state > TallyPVM) {
-      // Tally is in PGM
-      digitalWrite(relays[tally-1], LOW);
-    } else {
-      digitalWrite(relays[tally-1], HIGH);
-    }
-  } else if (tally == 5) {
-    // Special case, relay and apa102 chain
-    if (state > TallyPVM) {
-      // Tally is in PGM
-      digitalWrite(relays[4], LOW);
-    } else {
-      digitalWrite(relays[4], HIGH);
-    }
-    // Leds
-    for (int i = 0; i < TallyLedsPerStrip; i++) {
-      tally_leds[0][i] = tallyColor(state);
-    }
-  } else if (tally < 13) {
-    // Apa102 chains
-    int chain = tally - 5;
-    for (int i = 0; i < TallyLedsPerStrip; i++) {
-      tally_leds[chain][i] = tallyColor(state);
-    }
-  } else if (tally < 16) {
-    // Relays 6-8
-    // Get the relay pin designator
-    int pin = relays[tally-13+5];
-    if (state) {
-      digitalWrite(pin, LOW);
-    } else {
-      digitalWrite(pin, HIGH);
+void setTally(int tally, uint8_t state) {  
+  // Update status displays
+  tally_states[tally-1] = state;
+}
+
+// Update the leds and relays
+void updateTallies() {
+  
+  // Set the led chains and relays
+  // We use "natural" indexing starting from 1
+  // Tally mapping: 1-4: Relays 1-4
+  // 5-13: apa102 chains
+  // 14-17: Relays 5-8
+  for (int tally = 1; tally <= Tallies; tally++) {
+    uint8_t state = tally_states[tally-1];
+    if (tally > 0 && tally < 5) {
+      // Relays 1-4
+      if (state > TallyPVM) {
+        // Tally is in PGM
+        digitalWrite(relays[tally-1], LOW);
+      } else {
+        digitalWrite(relays[tally-1], HIGH);
+      }
+    } else if (tally == 5) {
+      // Special case, relay and apa102 chain
+      if (state > TallyPVM) {
+        // Tally is in PGM
+        digitalWrite(relays[4], LOW);
+      } else {
+        digitalWrite(relays[4], HIGH);
+      }
+      // Leds
+      for (int i = 0; i < TallyLedsPerStrip; i++) {
+        tally_leds[0][i] = tallyColor(state);
+      }
+    } else if (tally < 13) {
+      // Apa102 chains
+      int chain = tally - 5;
+      for (int i = 0; i < TallyLedsPerStrip; i++) {
+        tally_leds[chain][i] = tallyColor(state);
+      }
+    } else if (tally < 16) {
+      // Relays 6-8
+      // Get the relay pin designator
+      int pin = relays[tally-13+5];
+      if (state) {
+        digitalWrite(pin, LOW);
+      } else {
+        digitalWrite(pin, HIGH);
+      }
     }
   }
   
-  // Update status displays
-  tally_states[tally-1] = state;
-  updateStatus();
-}
-
-// Update the status led colors
-void updateStatus() {
+  // Set the status leds
   if (status_red) {
     // The 'red status led' is on, just display all red
     // This signal will blink so real status will alternate with the error signal
@@ -321,12 +325,15 @@ void updateStatus() {
       status_leds[i] = StatusUnknown;
     }
   }
+  
+  // Send the data
+  FastLED.show();
 }
 
 uint32_t tallyColor(uint8_t state) {
   uint32_t color;
   // apa102 chains
-  switch (state ) {
+  switch (state) {
     case TallyUnknown:  color = ColorUnknown; break;
     case TallySafe:     color = ColorSafe; break;
     case TallyPVM:      color = ColorPVM; break;
